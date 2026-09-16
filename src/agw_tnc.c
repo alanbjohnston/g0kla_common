@@ -49,7 +49,7 @@ int g_common_frames_queued = 0;
 //int g_common_bit_rate = 1200;
 int g_common_max_frames_in_tx_buffer = 5;
 
-int sockfd = 0;
+int sockfd = -1;
 
 struct sockaddr_in serv_addr;
 static int listen_thread_called = 0;
@@ -68,7 +68,11 @@ char registered_callsign[MAX_CALLSIGN_LEN];
  * Returns 0 if successful otherwise 1
  */
 int tnc_connect(char *addr, int port) {
-	if((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+	if (sockfd >= 0) {          /* close any previous socket first */
+		close(sockfd);
+		sockfd = -1;
+	}
+	if((sockfd = socket(AF_INET, SOCK_STREAM | SOCK_CLOEXEC, 0)) < 0) {
 		debug_print("\n Error : Could not create socket \n");
 		return EXIT_FAILURE;
 	}
@@ -444,6 +448,11 @@ void *tnc_listen_process(void * arg) {
 		int err = tnc_receive_packet();
 		if (err != EXIT_SUCCESS) {
 			debug_print("%s: No Data received. trying to reconnect\n",name);
+			 /* Close the dead socket before we reconnect, or we leak it in CLOSE-WAIT */
+			    if (sockfd >= 0) {
+			        close(sockfd);
+			        sockfd = -1;
+			    }
 			/* Connect to direwolf again */
 			rc = EXIT_FAILURE;
 		}

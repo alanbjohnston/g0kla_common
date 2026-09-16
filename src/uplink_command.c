@@ -26,6 +26,7 @@ char *FolderIdStrings[] = {
 		,"pacsat/wod"
 		,"pacsat/log"
 		,"pacsat/txt"
+		,"pacsat/img"
 		,"pacsat/senwod"
 		,"data1"
 		,"data2"
